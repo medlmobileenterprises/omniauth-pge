@@ -6,7 +6,7 @@ module OmniAuth
       def self.ssl_options
         {
           client_cert: OpenSSL::X509::Certificate.new(ENV.fetch("SSL_CERTIFICATE")),
-          client_key: OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY")),
+          client_key: OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY"), ENV.fetch("PRIVATE_KEY_PASSPHRASE", "")),
         }
       end
 
