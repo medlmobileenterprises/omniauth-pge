@@ -42,7 +42,7 @@ module OmniAuth
         params_string = URI.encode_www_form(
           "code" => request.params["code"],
           "grant_type" => "authorization_code",
-          "redirect_uri" => callback_url,
+          "redirect_uri" => "http://utilityzen.com/auth/pge/callback",
         )
         options.client_options[:token_url] += "?" + params_string
 
