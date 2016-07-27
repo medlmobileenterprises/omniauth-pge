@@ -31,6 +31,13 @@ module OmniAuth
         connection_opts: { ssl: ssl_options }
       }
 
+      def scope_url
+        ENV.fetch(
+          "PGE_SCOPE_URL",
+          "https://sharemydata.pge.com/myAuthorization/#authorization/welcome"
+        )
+      end
+
       def build_access_token
         options.token_params.merge!(
           headers: {
@@ -42,7 +49,7 @@ module OmniAuth
         params_string = URI.encode_www_form(
           "code" => request.params["code"],
           "grant_type" => "authorization_code",
-          "redirect_uri" => "http://utilityzen.com/auth/pge/callback",
+          "redirect_uri" => callback_url
         )
         options.client_options[:token_url] += "?" + params_string
 
@@ -53,6 +60,18 @@ module OmniAuth
         credential_string = "#{options.client_id}:#{options.client_secret}"
         encoded_credentials = Base64.urlsafe_encode64(credential_string)
         "Basic #{encoded_credentials}"
+      end
+
+      def request_call # rubocop:disable CyclomaticComplexity, MethodLength, PerceivedComplexity
+        if !request.params['scope']
+          redirect scope_url
+        else
+          super
+        end
+      end
+
+      def callback_url
+        full_host + script_name + callback_path
       end
 
       info do
