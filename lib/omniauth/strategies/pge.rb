@@ -32,10 +32,18 @@ module OmniAuth
       }
 
       def scope_url
-        ENV.fetch(
-          "PGE_SCOPE_URL",
-          "https://sharemydata.pge.com/myAuthorization/#authorization/welcome"
-        )
+        params = {
+          "client_id" => ENV.fetch("PGE_CLIENT_ID"),
+          "client_key" => ENV.fetch("PGE_CLIENT_KEY"),
+          "redirect_uri" => callback_url,
+          #required to ensure that PG+E redirects logged out accounts properly ->
+          "scope" => "149112",
+          "state" => "547c7a620182186022509ce201d85ef781f85614fcad9658"
+          #<----------------
+        }
+        query_string = URI.encode_www_form(params)
+
+        "https://sharemydata.pge.com/myAuthorization/?" + query_string + "#authorization/welcome"
       end
 
       def build_access_token
