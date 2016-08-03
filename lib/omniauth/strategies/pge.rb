@@ -70,16 +70,33 @@ module OmniAuth
         "Basic #{encoded_credentials}"
       end
 
+      def redirect_to_scope
+        session['omniauth.params'] = request.params
+        if request.params['origin']
+          env['rack.session']['omniauth.origin'] = request.params['origin']
+        elsif env['HTTP_REFERER'] && !env['HTTP_REFERER'].match(/#{request_path}$/)
+          env['rack.session']['omniauth.origin'] = env['HTTP_REFERER']
+        end
+        redirect scope_url
+      end
+
       def request_call # rubocop:disable CyclomaticComplexity, MethodLength, PerceivedComplexity
         if !request.params['scope']
-          if request.params['origin']
-            env['rack.session']['omniauth.origin'] = request.params['origin']
-          elsif env['HTTP_REFERER'] && !env['HTTP_REFERER'].match(/#{request_path}$/)
-            env['rack.session']['omniauth.origin'] = env['HTTP_REFERER']
-          end
-          redirect scope_url
+          return redirect_to_scope
+        end
+
+        setup_phase
+        log :info, 'Request phase initiated.'
+        # store query params from the request url, extracted in the callback_phase
+        OmniAuth.config.before_request_phase.call(env) if OmniAuth.config.before_request_phase
+        if options.form.respond_to?(:call)
+          log :info, 'Rendering form from supplied Rack endpoint.'
+          options.form.call(env)
+        elsif options.form
+          log :info, 'Rendering form from underlying application.'
+          call_app!
         else
-          super
+          request_phase
         end
       end
 
