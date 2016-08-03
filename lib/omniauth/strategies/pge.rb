@@ -72,6 +72,11 @@ module OmniAuth
 
       def request_call # rubocop:disable CyclomaticComplexity, MethodLength, PerceivedComplexity
         if !request.params['scope']
+          if request.params['origin']
+            env['rack.session']['omniauth.origin'] = request.params['origin']
+          elsif env['HTTP_REFERER'] && !env['HTTP_REFERER'].match(/#{request_path}$/)
+            env['rack.session']['omniauth.origin'] = env['HTTP_REFERER']
+          end
           redirect scope_url
         else
           super
