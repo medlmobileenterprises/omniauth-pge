@@ -34,8 +34,8 @@ module OmniAuth
       def scope_url
         params = {
           "client_id" => ENV.fetch("PGE_CLIENT_ID"),
-          "client_key" => ENV.fetch("PGE_CLIENT_KEY"),
           "redirect_uri" => callback_url,
+          "response_type" => "code",
           #required to ensure that PG+E redirects logged out accounts properly ->
           "scope" => "149112",
           "state" => "547c7a620182186022509ce201d85ef781f85614fcad9658"
