@@ -4,9 +4,14 @@ module OmniAuth
   module Strategies
     class PGE < OmniAuth::Strategies::OAuth2
       def self.ssl_options
+        if ENV["PRIVATE_KEY_PASSPHRASE"]
+          key = OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY"), ENV.fetch("PRIVATE_KEY_PASSPHRASE"))
+        else
+          key = OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY"))
+        end 
         {
           client_cert: OpenSSL::X509::Certificate.new(ENV.fetch("SSL_CERTIFICATE")),
-          client_key: OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY"), ENV.fetch("PRIVATE_KEY_PASSPHRASE", "")),
+          client_key: key,
         }
       end
 
