@@ -3,47 +3,23 @@ require 'omniauth-oauth2'
 module OmniAuth
   module Strategies
     class PGE < OmniAuth::Strategies::OAuth2
-      def self.ssl_options
-        if ENV["PRIVATE_KEY_PASSPHRASE"]
-          key = OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY"), ENV.fetch("PRIVATE_KEY_PASSPHRASE"))
-        else
-          key = OpenSSL::PKey::RSA.new(ENV.fetch("SSL_PRIVATE_KEY"))
-        end 
-        {
-          client_cert: OpenSSL::X509::Certificate.new(ENV.fetch("SSL_CERTIFICATE")),
-          client_key: key,
-        }
-      end
 
-      def self.authorization_url
-        ENV.fetch(
-          "PGE_OAUTH_AUTHORIZATION_URL",
-          "https://api.pge.com/datacustodian/test/oauth/v2/authorize",
-        )
-      end
-
-      def self.token_url
-        ENV.fetch(
-          "PGE_OAUTH_TOKEN_URL",
-          "https://api.pge.com/datacustodian/test/oauth/v2/token",
-        )
-      end
-
+      # Default client_options for this strategy
       option :client_options, {
         site: 'https://api.pge.com',
-        authorize_url: authorization_url,
-        token_url: token_url,
-        connection_opts: { ssl: ssl_options }
+        authorize_url: "https://api.pge.com/datacustodian/test/oauth/v2/authorize",
+        token_url: "https://api.pge.com/datacustodian/test/oauth/v2/token",
       }
 
       def scope_url
+        auth_params = authorize_params
         params = {
-          "client_id" => ENV.fetch("PGE_CLIENT_ID"),
+          "client_id" => options[:client_id],
           "redirect_uri" => callback_url,
           "response_type" => "code",
           #required to ensure that PG+E redirects logged out accounts properly ->
           "scope" => "149112",
-          "state" => "547c7a620182186022509ce201d85ef781f85614fcad9658"
+          "state" => auth_params[:state]
           #<----------------
         }
         query_string = URI.encode_www_form(params)
@@ -64,13 +40,13 @@ module OmniAuth
           "grant_type" => "authorization_code",
           "redirect_uri" => callback_url
         )
-        options.client_options[:token_url] += "?" + params_string
+        options[:client_options][:token_url] += "?" + params_string
 
         super
       end
 
       def authorization_header
-        credential_string = "#{options.client_id}:#{options.client_secret}"
+        credential_string = "#{options[:client_id]}:#{options[:client_secret]}"
         encoded_credentials = Base64.urlsafe_encode64(credential_string)
         "Basic #{encoded_credentials}"
       end
@@ -86,7 +62,7 @@ module OmniAuth
       end
 
       def request_call # rubocop:disable CyclomaticComplexity, MethodLength, PerceivedComplexity
-        if !request.params['scope']
+        unless request.params['scope']
           return redirect_to_scope
         end
 

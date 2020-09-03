@@ -25,7 +25,24 @@ In Rails, you'll want to add to the middleware stack:
 
 ```ruby
 Rails.application.config.middleware.use OmniAuth::Builder do
-  provider :pge, ENV['PGE_CLIENT_ID'], ENV['PGE_CLIENT_SECRET']
+  keyString = File.read("/path/to/cert/key")
+  cert = File.read("/path/to/cert/file")
+  
+  provider :pge, ENV['PGE_CLIENT_ID'], ENV['PGE_CLIENT_SECRET'], 
+    {
+      :client_options => {
+        :connection_opts => {
+          :ssl => {
+            :client_key => OpenSSL::PKey::RSA.new(keyString),
+            :client_cert => OpenSSL::X509::Certificate.new(cert)
+          },
+        },
+        # if not supplied, will default to the test url
+        :authorize_url => "production-url-here",
+        # if not supplied, will default to the test url
+        :token_url => "production-url-here",
+      },
+    }
 end
 ```
 
